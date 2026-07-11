@@ -1,0 +1,46 @@
+name: Feature
+description: A scoped product or engineering task
+title: "[Feature]: "
+labels: ["feature", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: State what is included and excluded.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Use testable checklist items.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security and privacy considerations
+  - type: textarea
+    id: testing
+    attributes:
+      label: Required tests
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Suggested implementation owner
+      options:
+        - Claude
+        - ChatGPT
+        - Human
+        - Unassigned
