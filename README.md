@@ -7,6 +7,19 @@ A focused Phase 1 web application for business students to:
 - Track job applications and hiring stages
 - Prepare with text-based AI-generated interview questions
 
+## Getting started
+
+Requires Node.js 22+.
+
+```bash
+npm install
+npm run dev        # start the dev server on http://localhost:3000
+npm run build      # production build
+npm run lint       # eslint
+npm run typecheck  # tsc --noEmit
+npm test           # vitest
+```
+
 ## Phase 1 scope
 
 Phase 1 intentionally excludes live voice interviews, subscriptions, large-scale scraping, workplace reviews, and personalized news.
