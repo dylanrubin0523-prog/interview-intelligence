@@ -66,6 +66,15 @@ This applies to Supabase, Sentry, AI providers, email services, and future exter
 
 PostgreSQL row-level security is row-level, not column-level. A public `SELECT` policy on a base table exposes the entire row, and combining a broad column `GRANT` (needed so an owner can read their own full row) with a permissive public `SELECT` policy would leak private columns to any authenticated user.
 
-Where a table must expose some columns publicly while keeping others owner-only, the public columns are exposed through a dedicated restricted view (e.g., `public.public_profiles`) that physically selects only the public columns, created `with (security_invoker = off)` so it reads across all rows as its owner. The base table carries no public/anon `SELECT` policy. Private columns are then unreachable through the public surface by construction — the view does not contain them — rather than depending on policy correctness.
+Where a table must expose some columns publicly while keeping others owner-only, the public columns are exposed through a dedicated restricted view (e.g., `public.public_profiles`) created `with (security_invoker = off)`. The base table carries no public/anon `SELECT` policy.
 
-First applied to `profiles` (issue #8). Applies to any future table with a public/private column split (e.g., `companies`, `interview_reports`).
+Because `security_invoker = off` makes the view read with the **view owner's** privileges — deliberately bypassing the caller's base-table RLS — a restricted view is safe **only** when it:
+
+1. projects **only** the explicitly public columns (private columns are absent from the view, so they cannot be selected through it);
+2. includes **every** required public-row eligibility filter in its `WHERE` clause (the view bypasses row-level RLS, so any restriction on *which rows* are public must be written into the view itself);
+3. receives only the **minimum** required grants (`SELECT` to `anon`/`authenticated`, nothing more); and
+4. is covered by **integration tests** proving that neither private columns nor non-public rows can leak through it.
+
+First applied to `profiles` (issue #8): the view projects only `display_name` and `school`, with **no** row filter — because every profile's public columns are intended to be public, there is no per-row eligibility restriction to enforce. Note that `profiles.id` (which is `auth.users.id`) is treated as private and is deliberately **not** in the view.
+
+This pattern is **not** automatically reusable for tables with row-level eligibility rules. For example, a future public view over `interview_reports` could not simply project columns: it would additionally have to filter to `moderation_status = 'approved'` (condition 2) and honor per-report anonymity rules before any report field is exposed. Such a view must be designed and tested on its own terms, not assumed to inherit safety from this ADR.

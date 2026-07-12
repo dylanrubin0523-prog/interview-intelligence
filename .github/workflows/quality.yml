@@ -8,6 +8,32 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+
+    # Throwaway PostgreSQL 15 (matching Supabase's engine version) for the RLS
+    # integration tests. The password below is a non-production test credential
+    # that exists only as CI configuration — it is not a Supabase key or any
+    # production secret.
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_test_password
+          POSTGRES_DB: rls_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Points the integration suite at the throwaway service DB above. Its
+      # presence also makes the suite's CI guard require the tests to run
+      # (never silently skip) — see tests/integration/profiles-rls.test.ts.
+      TEST_DATABASE_URL: postgresql://postgres:ci_test_password@localhost:5432/rls_test
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,5 +44,6 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test -- --run
+      - run: npm run test:integration
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

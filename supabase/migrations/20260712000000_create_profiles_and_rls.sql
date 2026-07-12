@@ -27,7 +27,7 @@ create table public.profiles (
 );
 
 comment on table public.profiles is
-  'User profile. Public columns (id, display_name, school) are exposed only via public.public_profiles; all other columns are owner-only via RLS.';
+  'User profile. Public columns (display_name, school) are exposed only via public.public_profiles; all other columns, including id, are owner-only via RLS.';
 comment on column public.profiles.role is
   'Authorization role. Defaults to user. Never client-writable: no INSERT policy exists and UPDATE is granted only on non-role columns. Assigned out-of-band.';
 
@@ -81,18 +81,21 @@ create policy profiles_update_own
 -- 6. Restricted public view.
 --    PostgreSQL RLS is row-level, not column-level: a public SELECT policy on
 --    the base table would expose the entire row, not just public columns. This
---    view physically selects only the intentionally-public columns, so private
---    columns (graduation_year, career_interests, role, timestamps) can never be
---    read through it. security_invoker = off means the view runs as its owner
---    and reads across all rows; safe here precisely because the projection is
---    limited to public columns. See ADR-010.
+--    view physically selects only the intentionally-public columns
+--    (display_name, school), so every other column -- including the profile id
+--    (which is auth.users.id) as well as graduation_year, career_interests,
+--    role and timestamps -- can never be read through it. security_invoker =
+--    off means the view runs as its owner and reads across all rows; safe here
+--    precisely because the projection is limited to public columns. See
+--    ADR-010. Note: id is intentionally NOT public -- exposing a stable public
+--    identifier is a separate product/privacy decision, not part of issue #8.
 create view public.public_profiles
   with (security_invoker = off)
   as
-    select id, display_name, school
+    select display_name, school
     from public.profiles;
 
 comment on view public.public_profiles is
-  'Public projection of profiles: id, display_name, school only. The public read surface for profiles; the base table has no anon/public SELECT policy.';
+  'Public projection of profiles: display_name and school only (no id). The public read surface for profiles; the base table has no anon/public SELECT policy.';
 
 grant select on public.public_profiles to anon, authenticated;

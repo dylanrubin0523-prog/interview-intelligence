@@ -12,7 +12,7 @@
 - created_at
 - updated_at
 
-Public columns (`id`, `display_name`, `school`) are exposed only through the restricted view `public.public_profiles` (see ADR-010). All other columns are owner-only.
+Public columns (`display_name`, `school`) are exposed only through the restricted view `public.public_profiles` (see ADR-010). All other columns — including `id` (which is `auth.users.id`) — are owner-only.
 
 ### companies
 - id
@@ -98,7 +98,7 @@ Public columns (`id`, `display_name`, `school`) are exposed only through the res
 
 ## Authorization expectations
 
-- Profiles: owner can update permitted fields only (not `role`, `id`, or timestamps); public fields (`display_name`, `school`) readable by anyone via `public.public_profiles`; all other fields owner-only. `role` is never client-writable.
+- Profiles: owner can update permitted fields only (not `role`, `id`, or timestamps); public fields (`display_name`, `school`) readable by anyone via `public.public_profiles`; all other fields, including `id`, owner-only. `role` is never client-writable.
 - Applications: owner only.
 - Draft/pending interview reports: author and admins only.
 - Approved interview reports: publicly readable.
