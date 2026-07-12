@@ -20,6 +20,15 @@ npm run typecheck  # tsc --noEmit
 npm test           # vitest
 ```
 
+## Deployment
+
+The repo is connected to Vercel:
+
+- Pushing to `main` deploys to production.
+- Every pull request gets its own preview deployment automatically (Vercel comments the preview URL on the PR).
+- Environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, see `.env.example`) are configured per-environment (Production/Preview) in the Vercel project dashboard under Settings → Environment Variables — never committed to this repo.
+- Vercel auto-detects the Next.js framework; build and output settings are left on their defaults.
+
 ## Phase 1 scope
 
 Phase 1 intentionally excludes live voice interviews, subscriptions, large-scale scraping, workplace reviews, and personalized news.
