@@ -10,11 +10,49 @@ The current, committed Phase 1 scope (`docs/PRODUCT_SPEC.md`) already establishe
 
 ## Future vision pillars
 
-- **Personalized dashboards.** Surface reports, deadlines, and prep material relevant to a student's actual target companies and positions, instead of requiring them to search for everything manually.
-- **Recruiting news / signal aggregation.** Phase 1 explicitly excludes news aggregation (`docs/PRODUCT_SPEC.md`). A future version could aggregate recruiting-relevant signal (application windows opening, info sessions, hiring freezes) — but only from sources and in a form that doesn't compromise the trust principles in `docs/PRODUCT_PRINCIPLES.md`.
-- **Application/company alerts.** Notify a user when a company they're tracking gets a new report, opens a new position, or approaches a deadline in their tracker.
-- **Recruiting calendar.** Aggregate application deadlines and known recruiting events across a student's tracked companies into one calendar view.
-- **Recommendations.** Suggest companies, positions, or reports based on a student's profile, application history, and career interests — see `docs/AI_STRATEGY.md` for how this would relate to AI capability growth.
+### Personalized morning briefing
+
+A homepage a user can check each morning summarizing: important deadlines and application updates, upcoming interviews and recommended preparation, new interview reports relevant to their target roles, personalized recruiting and industry news, and recommended companies and opportunities. A single entry point into everything else in this document, not a new data source of its own.
+
+### Recruiting news and industry signals
+
+Coverage of job/internship applications opening or closing, hiring expansions, freezes, layoffs, restructuring, compensation changes, recruiting-timeline changes, and relevant regulatory or industry developments. Every story must show its source, publication date, and a short "why this matters to you" explanation. Sourced facts and AI-generated interpretation must always be visibly distinguished from each other — never blended into one undifferentiated block of text.
+
+### Alerts and recruiting calendar
+
+A company follow system; alerts for application openings and deadlines; reminders for interviews, assessments, and events; one calendar combining tracked applications, recruiting events, deadlines, and preparation reminders. Notification categories and frequency are user-controlled, not on-by-default for everything.
+
+### Daily or weekly digest
+
+An optional digest of openings, deadlines, interview reminders, new reports, and relevant industry news. Users choose disabled, daily, or weekly — never a default a user has to discover how to turn off.
+
+### Industry trends
+
+Hiring direction, layoffs and restructuring, compensation changes, and recruiting timing, presented with explicit uncertainty where it exists. Statistics are never invented — a trend without a reliable source is presented as a qualitative signal, not a fabricated number.
+
+### Community activity
+
+Newly approved interview reports, new questions reported for followed companies and positions, and popular companies/roles relevant to the user. All existing moderation and privacy rules (`docs/PRODUCT_PRINCIPLES.md`) continue to apply unchanged — community activity is not a backdoor around moderation gating.
+
+### Recommendations
+
+Recommend companies, roles, reports, and preparation activities, with an explanation for why each one is shown. Recommendations never infer sensitive traits about a user, and are never presented as guarantees of employment.
+
+### Recruiting readiness summary
+
+May summarize transparent, user-controllable activity — profile completion, upcoming deadlines, saved opportunities, completed preparation, application progress. Must never be presented as an employability score, a hiring-probability prediction, or any other opaque judgment of the user.
+
+## Low-cost architecture
+
+Personalization at this scale only works if it's cheap to run. The intended shape: ingest and store each article, job-opening event, or source item once; summarize or classify it once whenever practical; reuse cached summaries across users; personalize primarily through filtering, ranking, and user preferences rather than a fresh AI request per user or per page load. Routine feed rendering must not trigger paid AI generation.
+
+## Data sources and scraping guardrails
+
+Prefer official company career pages, ATS feeds, RSS feeds, press releases, and permitted or licensed APIs. Respect `robots.txt`, terms of service, attribution requirements, rate limits, and deletion requests. This product is not designed around unauthorized scraping of Glassdoor, LinkedIn, Handshake, or other restricted platforms. Stories and job records are deduplicated before being shown to users.
+
+## Privacy and controls
+
+Users choose their followed companies, industries, locations, notification types, and digest frequency. Private application data must never become public or be exposed to another user — this is unchanged from Phase 1 (`docs/PRODUCT_PRINCIPLES.md`). Every personalization input and notification must be editable or disableable by the user it belongs to.
 
 ## Guardrails that carry over unchanged
 

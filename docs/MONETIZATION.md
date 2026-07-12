@@ -14,12 +14,12 @@ This product's core asset is trust: students need to believe the reports, diffic
 
 - **Freemium features** — e.g., deeper analytics, expanded AI prep generation, personalized dashboard features from `docs/RECRUITING_INTELLIGENCE.md` — kept behind a free core so the trust-critical parts of the product (reports, tracker, verification) never require payment.
 - **Institutional partnerships** — university career centers as a customer, rather than individual students.
-- **Aggregate, anonymized market insights** — sold to employers or career services, only if genuinely anonymized and never at the cost of an individual contributor's privacy or consent.
+- **Aggregate, anonymized market insights** — sold to employers or career services, only if genuinely anonymized and only with the explicit, informed consent required by `docs/PRODUCT_PRINCIPLES.md` — never at the cost of an individual contributor's privacy.
 - **Verified/sponsored employer profiles** — must remain clearly and honestly labeled as such; sponsorship can never be allowed to affect a company's verification status or report visibility.
 
 ## Guardrails any future monetization must respect
 
-Whatever direction is eventually chosen must be evaluated against `docs/PRODUCT_PRINCIPLES.md` before implementation: it cannot compromise privacy-by-default, cannot let payment influence the verified/unverified distinction, and cannot monetize user-submitted report content without clear consent and attribution. None of these guardrails are up for renegotiation just because a monetization idea is otherwise appealing.
+Whatever direction is eventually chosen must be evaluated against `docs/PRODUCT_PRINCIPLES.md` before implementation: it cannot compromise privacy-by-default, cannot let payment influence the verified/unverified distinction, and — per `docs/PRODUCT_PRINCIPLES.md`'s explicit-consent principle — user data and user-submitted content can never be sold or shared without the affected user's explicit, informed, opt-in consent. None of these guardrails are up for renegotiation just because a monetization idea is otherwise appealing.
 
 ## Explicitly not a commitment
 

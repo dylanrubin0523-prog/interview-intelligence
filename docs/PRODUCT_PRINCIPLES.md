@@ -11,6 +11,7 @@ These are the product-level rules that hold regardless of which feature is being
 5. **AI-generated content is always labeled as such.** A user should never have to guess whether text came from another student or from a model.
 6. **Speed is a feature, measured concretely.** Adding or updating an application: under 2 minutes. Submitting a full interview report: under 7 minutes. These aren't aspirational — they're acceptance criteria (`docs/PRODUCT_SPEC.md`).
 7. **Scope discipline protects trust.** Phase 1 explicitly excludes live voice interviews, native mobile apps, subscription billing, broad scraping, employer reviews, news aggregation, salary data, and employer accounts. Excluding these isn't an oversight — each one either isn't validated yet or would complicate the trust story this product depends on.
+8. **User data and user-submitted content are never sold or shared without explicit, informed consent.** This holds regardless of business model. Aggregating, anonymizing, or monetizing anything a user contributed or any data about them requires their explicit opt-in — it is never a default, and it is never buried in broad terms-of-service language.
 
 ## Future vision
 
