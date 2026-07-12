@@ -59,6 +59,55 @@ describe("lib/env/client", () => {
   });
 });
 
+describe("lib/env/sentry", () => {
+  it("does not fail to start when NEXT_PUBLIC_SENTRY_DSN is missing (optional)", async () => {
+    process.env = { ...ORIGINAL_ENV };
+    delete process.env.NEXT_PUBLIC_SENTRY_DSN;
+
+    const { sentryEnv } = await import("../../lib/env/sentry");
+    expect(sentryEnv.NEXT_PUBLIC_SENTRY_DSN).toBeUndefined();
+  });
+
+  it("does not require Supabase variables to be configured", async () => {
+    // Regression test: sentryEnv previously lived on the same combined
+    // clientEnv object as the required Supabase variables, so anything
+    // that only needed the (optional) Sentry DSN -- like
+    // instrumentation.ts / instrumentation-client.ts, which run before any
+    // Supabase client exists -- failed to start whenever Supabase wasn't
+    // configured, even without touching Supabase at all.
+    process.env = { ...ORIGINAL_ENV };
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    delete process.env.NEXT_PUBLIC_SENTRY_DSN;
+
+    const { sentryEnv } = await import("../../lib/env/sentry");
+    expect(sentryEnv.NEXT_PUBLIC_SENTRY_DSN).toBeUndefined();
+  });
+
+  it("throws a clear error when NEXT_PUBLIC_SENTRY_DSN is present but invalid", async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      NEXT_PUBLIC_SENTRY_DSN: "not-a-valid-url",
+    };
+
+    await expect(import("../../lib/env/sentry")).rejects.toThrow(
+      /NEXT_PUBLIC_SENTRY_DSN must be a valid URL/,
+    );
+  });
+
+  it("parses NEXT_PUBLIC_SENTRY_DSN when a valid DSN is supplied", async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      NEXT_PUBLIC_SENTRY_DSN: "https://key@o0.ingest.sentry.io/0",
+    };
+
+    const { sentryEnv } = await import("../../lib/env/sentry");
+    expect(sentryEnv.NEXT_PUBLIC_SENTRY_DSN).toBe(
+      "https://key@o0.ingest.sentry.io/0",
+    );
+  });
+});
+
 describe("lib/env/server", () => {
   it("does not fail to start when SUPABASE_SERVICE_ROLE_KEY is missing (optional)", async () => {
     process.env = {

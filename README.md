@@ -29,6 +29,10 @@ The repo is connected to Vercel:
 - Environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, see `.env.example`) are configured per-environment (Production/Preview) in the Vercel project dashboard under Settings → Environment Variables — never committed to this repo.
 - Vercel auto-detects the Next.js framework; build and output settings are left on their defaults.
 
+## Error tracking
+
+Sentry (`@sentry/nextjs`) is wired up but **inactive by default** — with no `NEXT_PUBLIC_SENTRY_DSN` set, the SDK no-ops and the app builds/runs normally. To enable it, see the instructions in `.env.example`. Once a DSN is set, visit `/sentry-example-page` to trigger a client + server test error and confirm both reach the Sentry project.
+
 ## Phase 1 scope
 
 Phase 1 intentionally excludes live voice interviews, subscriptions, large-scale scraping, workplace reviews, and personalized news.
