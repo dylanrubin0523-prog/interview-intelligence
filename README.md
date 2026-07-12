@@ -7,6 +7,30 @@ A focused Phase 1 web application for business students to:
 - Track job applications and hiring stages
 - Prepare with text-based AI-generated interview questions
 
+## Project Documentation
+
+**Current (Phase 1)**
+
+- [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md) — what's actually being built
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — technical boundaries and security principles
+- [`docs/DATABASE.md`](docs/DATABASE.md) — schema and authorization plan
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) — chronological architecture decision log
+- [`docs/HANDOFF_TEMPLATE.md`](docs/HANDOFF_TEMPLATE.md) — PR handoff format
+- [`AGENTS.md`](AGENTS.md) — operational instructions for AI assistants working in this repo
+- [`SECURITY.md`](SECURITY.md) — vulnerability reporting and secret-handling policy
+
+**Governance & vision**
+
+- [`docs/PROJECT_CONSTITUTION.md`](docs/PROJECT_CONSTITUTION.md) — how this project is governed and built
+- [`docs/NORTH_STAR.md`](docs/NORTH_STAR.md) — long-term mission and how vision documents relate to the active roadmap
+- [`docs/PRODUCT_PRINCIPLES.md`](docs/PRODUCT_PRINCIPLES.md) — durable product rules that settle ambiguous design decisions
+
+**Future vision (not on the current roadmap)**
+
+- [`docs/RECRUITING_INTELLIGENCE.md`](docs/RECRUITING_INTELLIGENCE.md) — long-term product vision beyond Phase 1
+- [`docs/AI_STRATEGY.md`](docs/AI_STRATEGY.md) — how AI capability grows beyond Phase 1's single use case
+- [`docs/MONETIZATION.md`](docs/MONETIZATION.md) — speculative future business model directions
+
 ## Getting started
 
 Requires Node.js 22+.
