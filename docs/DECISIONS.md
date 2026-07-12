@@ -43,3 +43,19 @@ The first implementation of `InterviewQuestionGenerator` (`docs/ARCHITECTURE.md`
 **Status:** Accepted
 
 Error tracking is a Milestone 0 (foundations) task rather than a later polish item. AGENTS.md's definition of done requires that error states be handled; without error tracking from the start, regressions in error handling would go unnoticed as features are built in Milestones 1–6.
+
+## ADR-008: AI provider selection is deferred until implementation
+
+**Status:** Accepted
+
+The application continues to use a provider-independent `InterviewQuestionGenerator` interface. The concrete provider and model will be selected when Milestone 6 begins, based on cost, quality, latency, privacy, and implementation requirements. No application or domain code may depend directly on a vendor SDK type. AI-generated questions must retain explicit provenance labels and must never be represented as user-reported questions.
+
+This ADR supersedes only the provider-selection portion of ADR-006. The adapter boundary and environment-based model configuration principles remain valid.
+
+## ADR-009: External integrations have independent environment modules
+
+**Status:** Accepted
+
+Each external service owns an independently validated environment module. Importing one integration must never require another integration's variables to exist. Client-safe and server-only values remain separated, and secrets are never imported into browser code.
+
+This applies to Supabase, Sentry, AI providers, email services, and future external integrations.
