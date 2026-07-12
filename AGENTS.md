@@ -21,7 +21,7 @@ Read before editing:
 - Do not silently change the product scope.
 - State assumptions in the pull request.
 - Prefer small, reviewable commits.
-- Never push directly to `main`.
+- Never push directly to `main`. All changes land via a pull request with a passing `quality` CI check; paths under `docs/`, `supabase/migrations/`, and `.github/` additionally require the repo owner's review per `.github/CODEOWNERS`.
 - Never commit secrets, API keys, `.env.local`, private user data, or production exports.
 - Use migrations for database changes.
 - Add or update tests for changed behavior.

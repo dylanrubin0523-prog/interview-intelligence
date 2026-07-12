@@ -1,0 +1,6 @@
+# Architecture-sensitive paths require the repo owner's review,
+# regardless of which AI assistant or contributor opens the PR.
+
+/docs/                    @dylanrubin0523-prog
+/supabase/migrations/     @dylanrubin0523-prog
+/.github/                 @dylanrubin0523-prog
