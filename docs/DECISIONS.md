@@ -59,3 +59,13 @@ This ADR supersedes only the provider-selection portion of ADR-006. The adapter 
 Each external service owns an independently validated environment module. Importing one integration must never require another integration's variables to exist. Client-safe and server-only values remain separated, and secrets are never imported into browser code.
 
 This applies to Supabase, Sentry, AI providers, email services, and future external integrations.
+
+## ADR-010: Column-limited public reads use restricted views
+
+**Status:** Accepted
+
+PostgreSQL row-level security is row-level, not column-level. A public `SELECT` policy on a base table exposes the entire row, and combining a broad column `GRANT` (needed so an owner can read their own full row) with a permissive public `SELECT` policy would leak private columns to any authenticated user.
+
+Where a table must expose some columns publicly while keeping others owner-only, the public columns are exposed through a dedicated restricted view (e.g., `public.public_profiles`) that physically selects only the public columns, created `with (security_invoker = off)` so it reads across all rows as its owner. The base table carries no public/anon `SELECT` policy. Private columns are then unreachable through the public surface by construction — the view does not contain them — rather than depending on policy correctness.
+
+First applied to `profiles` (issue #8). Applies to any future table with a public/private column split (e.g., `companies`, `interview_reports`).

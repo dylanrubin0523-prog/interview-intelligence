@@ -8,8 +8,11 @@
 - school
 - graduation_year
 - career_interests
+- role (`profile_role` enum: `user` | `admin`, defaults to `user`; never client-writable)
 - created_at
 - updated_at
+
+Public columns (`id`, `display_name`, `school`) are exposed only through the restricted view `public.public_profiles` (see ADR-010). All other columns are owner-only.
 
 ### companies
 - id
@@ -95,7 +98,7 @@
 
 ## Authorization expectations
 
-- Profiles: owner can update; public fields may be readable.
+- Profiles: owner can update permitted fields only (not `role`, `id`, or timestamps); public fields (`display_name`, `school`) readable by anyone via `public.public_profiles`; all other fields owner-only. `role` is never client-writable.
 - Applications: owner only.
 - Draft/pending interview reports: author and admins only.
 - Approved interview reports: publicly readable.
