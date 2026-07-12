@@ -6,11 +6,17 @@ import { clientEnv } from "./client";
  * Server-only variables. The `server-only` import makes this module fail to
  * build if it's ever pulled into a client bundle, so a secret like
  * SUPABASE_SERVICE_ROLE_KEY can never end up shipped to the browser.
+ *
+ * SUPABASE_SERVICE_ROLE_KEY is optional: no admin/service-role client exists
+ * yet in this codebase, so nothing depends on it. It's reserved for a future
+ * trusted admin client and validated (non-empty when present) so that future
+ * client fails fast on a malformed value rather than a missing one.
  */
 const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z
-    .string({ message: "SUPABASE_SERVICE_ROLE_KEY is required" })
-    .min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
+    .string()
+    .min(1, "SUPABASE_SERVICE_ROLE_KEY must not be empty when set")
+    .optional(),
 });
 
 function parseServerEnv() {
