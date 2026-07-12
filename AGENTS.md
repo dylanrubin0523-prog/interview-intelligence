@@ -22,6 +22,7 @@ Read before editing:
 - State assumptions in the pull request.
 - Prefer small, reviewable commits.
 - Never push directly to `main`. All changes land via a pull request with a passing `quality` CI check; paths under `docs/`, `supabase/migrations/`, and `.github/` additionally require the repo owner's review per `.github/CODEOWNERS`.
+- After opening a pull request, stop and wait for explicit user approval to merge. Do not treat implementation approval as merge approval.
 - Never commit secrets, API keys, `.env.local`, private user data, or production exports.
 - Use migrations for database changes.
 - Add or update tests for changed behavior.
