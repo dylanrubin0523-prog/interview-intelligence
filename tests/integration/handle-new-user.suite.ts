@@ -19,16 +19,52 @@ export function runHandleNewUserSuite(enabled: boolean): void {
       await resetAndMigrate();
     }, 60_000);
 
-    // --- automatic creation ---
+    // --- automatic creation, exercised as the RESTRICTED auth-admin role ---
+    //
+    // This is the load-bearing SECURITY DEFINER test: the insert into auth.users
+    // runs as supabase_auth_admin, which has NO privileges on public.profiles and
+    // NO direct EXECUTE on the function. It would fail with "permission denied
+    // for table profiles" if the function were SECURITY INVOKER.
+    it("creates exactly one profile, with defaults, when the restricted supabase_auth_admin inserts the auth user", async () => {
+      const result = await asOwnerRollback(async (c) => {
+        // Preconditions: the restricted role can touch neither profiles nor the
+        // elevated function directly.
+        const pre = await c.query<{
+          can_insert_profiles: boolean;
+          can_execute_fn: boolean;
+        }>(
+          `select
+             has_table_privilege('supabase_auth_admin', 'public.profiles', 'INSERT') as can_insert_profiles,
+             has_function_privilege('supabase_auth_admin', '${FN}', 'EXECUTE')       as can_execute_fn`,
+        );
 
-    it("creates exactly one profile whose id matches the new auth user", async () => {
-      const rows = await asOwnerRollback(async (c) => {
+        // Insert AS supabase_auth_admin (owner of auth.users), then reset to the
+        // database owner before reading profiles (the restricted role cannot read
+        // profiles either).
+        await c.query(`set local role supabase_auth_admin`);
         await c.query(`insert into auth.users (id, email) values ($1,$2)`, [U, "u@test.dev"]);
-        const r = await c.query(`select id from public.profiles where id = $1`, [U]);
-        return r.rows;
+        await c.query(`reset role`);
+
+        const prof = await c.query(
+          `select id, role, display_name, school, graduation_year,
+                  career_interests, created_at, updated_at
+             from public.profiles where id = $1`,
+          [U],
+        );
+        return { pre: pre.rows[0], count: prof.rowCount, row: prof.rows[0] };
       });
-      expect(rows).toHaveLength(1);
-      expect(rows[0].id).toBe(U);
+
+      expect(result.pre.can_insert_profiles).toBe(false);
+      expect(result.pre.can_execute_fn).toBe(false);
+      expect(result.count).toBe(1);
+      expect(result.row.id).toBe(U);
+      expect(result.row.role).toBe("user");
+      expect(result.row.display_name).toBeNull();
+      expect(result.row.school).toBeNull();
+      expect(result.row.graduation_year).toBeNull();
+      expect(result.row.career_interests).toBeNull();
+      expect(result.row.created_at).not.toBeNull();
+      expect(result.row.updated_at).not.toBeNull();
     });
 
     it("defaults role to 'user' on the auto-created profile", async () => {
@@ -181,21 +217,28 @@ export function runHandleNewUserSuite(enabled: boolean): void {
 
     // --- privilege hardening (catalog) ---
 
-    it("does not grant EXECUTE to anon, authenticated, or service_role", async () => {
+    it("does not grant EXECUTE to anon, authenticated, service_role, or supabase_auth_admin", async () => {
       const row = await asOwner(async (c) => {
         const r = await c.query<{
           anon: boolean;
           authenticated: boolean;
           service_role: boolean;
+          supabase_auth_admin: boolean;
         }>(
           `select
-             has_function_privilege('anon', '${FN}', 'EXECUTE')          as anon,
-             has_function_privilege('authenticated', '${FN}', 'EXECUTE') as authenticated,
-             has_function_privilege('service_role', '${FN}', 'EXECUTE')  as service_role`,
+             has_function_privilege('anon', '${FN}', 'EXECUTE')                as anon,
+             has_function_privilege('authenticated', '${FN}', 'EXECUTE')       as authenticated,
+             has_function_privilege('service_role', '${FN}', 'EXECUTE')        as service_role,
+             has_function_privilege('supabase_auth_admin', '${FN}', 'EXECUTE') as supabase_auth_admin`,
         );
         return r.rows[0];
       });
-      expect(row).toEqual({ anon: false, authenticated: false, service_role: false });
+      expect(row).toEqual({
+        anon: false,
+        authenticated: false,
+        service_role: false,
+        supabase_auth_admin: false,
+      });
     });
 
     it("does not grant EXECUTE to PUBLIC", async () => {

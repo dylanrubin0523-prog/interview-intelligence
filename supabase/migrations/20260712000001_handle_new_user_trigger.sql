@@ -14,11 +14,14 @@
 -- Trigger function.
 --
 -- SECURITY DEFINER: the role that inserts into auth.users (Supabase's auth
--- admin) has no privileges on public.profiles, so the function must run with the
--- privileges of its owner to create the profile row. Because it is elevated, it
--- is hardened:
---   * SET search_path = '' plus fully-qualified names (public.profiles,
---     pg_catalog operators) prevents search-path hijacking of the definer.
+-- admin, supabase_auth_admin) has no privileges on public.profiles, so the
+-- function must run with the privileges of its owner to create the profile row.
+-- Because it is elevated, it is hardened:
+--   * SET search_path = '' plus explicitly qualifying the application object it
+--     touches (public.profiles) prevents search-path hijacking of the definer.
+--     PostgreSQL built-ins (e.g. the row type, now() behind the column default)
+--     still resolve normally because pg_catalog is always on the effective
+--     search path even when search_path is empty.
 --   * It inserts ONLY new.id and relies entirely on the profiles table defaults
 --     (role = 'user', created_at/updated_at = now()). It never reads or copies
 --     raw_user_meta_data, raw_app_meta_data, email, provider, display name,
@@ -40,7 +43,7 @@ end;
 $$;
 
 comment on function public.handle_new_user() is
-  'Creates the public.profiles row for a new auth.users row. SECURITY DEFINER (the inserting auth role has no rights on public.profiles); hardened with search_path='''' + fully-qualified names; inserts only NEW.id and trusts no user/provider metadata; ON CONFLICT (id) DO NOTHING for idempotency.';
+  'Creates the public.profiles row for a new auth.users row. SECURITY DEFINER (the inserting auth role, supabase_auth_admin, has no rights on public.profiles); hardened with search_path='''' and by explicitly qualifying public.profiles; inserts only NEW.id and trusts no user/provider metadata; ON CONFLICT (id) DO NOTHING for idempotency.';
 
 -- Trigger: one profile per newly created auth user.
 create trigger on_auth_user_created
@@ -48,11 +51,14 @@ create trigger on_auth_user_created
   for each row
   execute function public.handle_new_user();
 
--- Lock down direct callability. A trigger fires the function regardless of the
--- invoking role's EXECUTE privilege, so revoking EXECUTE from everyone leaves the
--- trigger fully functional while ensuring no client -- and not even service_role
--- -- can invoke this elevated, RLS-bypassing function directly. (Revoking a
--- privilege that was never granted is a harmless no-op.)
+-- Lock down direct callability. EXECUTE is revoked from PUBLIC and from every
+-- application/auth-facing non-owner role (anon, authenticated, service_role); the
+-- function owner and superusers necessarily retain control. A trigger fires its
+-- function regardless of the invoking role's EXECUTE privilege, so the trigger
+-- remains fully functional while no client -- and not even service_role or the
+-- restricted supabase_auth_admin role -- can invoke this elevated, RLS-bypassing
+-- function directly. (Revoking a privilege that was never granted is a harmless
+-- no-op.)
 revoke execute on function public.handle_new_user() from public;
 revoke execute on function public.handle_new_user() from anon;
 revoke execute on function public.handle_new_user() from authenticated;
