@@ -8,8 +8,11 @@
 - school
 - graduation_year
 - career_interests
+- role (`profile_role` enum: `user` | `admin`, defaults to `user`; never client-writable)
 - created_at
 - updated_at
+
+Profiles are entirely owner-only in Phase 1: a user can read and update only their own row, and there is no public profile view or directory. Public author identity is deferred to the interview-report public surface, where approved-moderation status and the author's anonymous-display choice are enforced together.
 
 ### companies
 - id
@@ -95,7 +98,7 @@
 
 ## Authorization expectations
 
-- Profiles: owner can update; public fields may be readable.
+- Profiles: entirely owner-only. A user can read only their own row (no enumeration of others, no anon read) and update only permitted fields (not `role`, `id`, `created_at`, or `updated_at`). Users cannot insert or delete profiles. `role` is never client-writable. No globally public profile directory.
 - Applications: owner only.
 - Draft/pending interview reports: author and admins only.
 - Approved interview reports: publicly readable.
