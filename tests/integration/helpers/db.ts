@@ -68,12 +68,29 @@ export async function resetAndMigrate(): Promise<void> {
 }
 
 /**
- * Seed rows as the table owner (bypasses RLS), simulating what the future
- * issue #9 trigger will do when a new auth user is created. Used only for
- * fixtures, never for assertions.
+ * Run `fn` as the table owner (bypasses RLS). Used for fixtures and for
+ * read-only catalog assertions, never for the RLS access-control assertions.
  */
 export async function asOwner<T>(fn: (client: Client) => Promise<T>): Promise<T> {
   return withAdminClient(fn);
+}
+
+/**
+ * Run `fn` as the table owner inside a transaction that is always rolled back.
+ * Used by the trigger tests: an INSERT into auth.users fires on_auth_user_created
+ * synchronously within the transaction, so the resulting profile row is
+ * observable for assertions and then discarded — giving each test perfect
+ * isolation with no accumulation and no per-test schema reset.
+ */
+export async function asOwnerRollback<T>(fn: (client: Client) => Promise<T>): Promise<T> {
+  return withAdminClient(async (client) => {
+    try {
+      await client.query("begin");
+      return await fn(client);
+    } finally {
+      await client.query("rollback");
+    }
+  });
 }
 
 type JwtClaims = { sub?: string; role?: string } | null;

@@ -12,6 +12,8 @@
 - created_at
 - updated_at
 
+Profile rows are created automatically by a hardened `SECURITY DEFINER` trigger (`public.handle_new_user`, fired `AFTER INSERT ON auth.users`): it inserts only the new user's `id` and relies on the table defaults, trusting no user/provider metadata. There is no client profile-insert path.
+
 Profiles are entirely owner-only in Phase 1: a user can read and update only their own row, and there is no public profile view or directory. Public author identity is deferred to the interview-report public surface, where approved-moderation status and the author's anonymous-display choice are enforced together.
 
 ### companies
