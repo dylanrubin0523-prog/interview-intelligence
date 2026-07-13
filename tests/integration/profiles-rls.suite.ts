@@ -9,9 +9,12 @@ const USER_B = "22222222-2222-2222-2222-222222222222";
  * The profiles RLS suite. `enabled` runs it; otherwise it is registered as
  * skipped (used for local runs with no TEST_DATABASE_URL; CI never skips —
  * see profiles-rls.test.ts).
+ *
+ * Profiles are entirely owner-only: there is no public profile view/directory.
  */
 export function runProfilesRlsSuite(enabled: boolean): void {
   const describeFn = enabled ? describe : describe.skip;
+
   describeFn("profiles RLS (issue #8)", () => {
     beforeAll(async () => {
       await resetAndMigrate();
@@ -33,13 +36,11 @@ export function runProfilesRlsSuite(enabled: boolean): void {
       });
     }, 60_000);
 
-    // --- role default (verified through each user's own permitted owner read) ---
+    // --- role default, via each user's own permitted owner read ---
 
     it("defaults role to 'user', seen via user A's own row read", async () => {
       const role = await asUser(USER_A, async (c) => {
-        const r = await c.query<{ role: string }>(
-          `select role from public.profiles`,
-        );
+        const r = await c.query<{ role: string }>(`select role from public.profiles`);
         return r.rows[0]?.role;
       });
       expect(role).toBe("user");
@@ -47,40 +48,49 @@ export function runProfilesRlsSuite(enabled: boolean): void {
 
     it("defaults role to 'user', seen via user B's own row read", async () => {
       const role = await asUser(USER_B, async (c) => {
-        const r = await c.query<{ role: string }>(
-          `select role from public.profiles`,
-        );
+        const r = await c.query<{ role: string }>(`select role from public.profiles`);
         return r.rows[0]?.role;
       });
       expect(role).toBe("user");
     });
 
-    // --- base-table read isolation ---
+    // --- read: owner-only, no enumeration ---
 
-    it("lets an authenticated user read their own full row", async () => {
+    it("lets user A read their own complete profile", async () => {
       const rows = await asUser(USER_A, async (c) => {
-        const r = await c.query(`select * from public.profiles`);
+        const r = await c.query(`select * from public.profiles where id = $1`, [USER_A]);
         return r.rows;
       });
       expect(rows).toHaveLength(1);
-      expect(rows[0]).toMatchObject({
-        id: USER_A,
-        display_name: "Alice",
-        role: "user",
-      });
+      expect(rows[0]).toMatchObject({ id: USER_A, display_name: "Alice", role: "user" });
     });
 
-    it("does NOT let user A read user B's private row", async () => {
+    it("lets user B read their own complete profile", async () => {
+      const rows = await asUser(USER_B, async (c) => {
+        const r = await c.query(`select * from public.profiles where id = $1`, [USER_B]);
+        return r.rows;
+      });
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ id: USER_B, display_name: "Bob", role: "user" });
+    });
+
+    it("does NOT let user A read user B", async () => {
       const rows = await asUser(USER_A, async (c) => {
-        const r = await c.query(`select * from public.profiles where id = $1`, [
-          USER_B,
-        ]);
+        const r = await c.query(`select * from public.profiles where id = $1`, [USER_B]);
         return r.rows;
       });
       expect(rows).toHaveLength(0);
     });
 
-    it("does NOT allow unrestricted authenticated reads of the full table", async () => {
+    it("does NOT let user B read user A", async () => {
+      const rows = await asUser(USER_B, async (c) => {
+        const r = await c.query(`select * from public.profiles where id = $1`, [USER_A]);
+        return r.rows;
+      });
+      expect(rows).toHaveLength(0);
+    });
+
+    it("returns only the caller's own row when selecting the whole table", async () => {
       const ids = await asUser(USER_A, async (c) => {
         const r = await c.query<{ id: string }>(`select id from public.profiles`);
         return r.rows.map((row) => row.id);
@@ -88,41 +98,13 @@ export function runProfilesRlsSuite(enabled: boolean): void {
       expect(ids).toEqual([USER_A]);
     });
 
-    it("blocks anon from reading the base profiles table at all", async () => {
+    it("blocks anon from reading the profiles table", async () => {
       await expect(
         asAnon((c) => c.query(`select count(*) from public.profiles`)),
       ).rejects.toThrow(/permission denied/i);
     });
 
-    // --- public view surface ---
-
-    it("exposes EXACTLY display_name and school through the public view", async () => {
-      const rows = await asAnon(async (c) => {
-        const r = await c.query(
-          `select * from public.public_profiles order by display_name`,
-        );
-        return r.rows;
-      });
-      expect(rows).toHaveLength(2);
-      expect(Object.keys(rows[0]).sort()).toEqual(["display_name", "school"]);
-      expect(rows.map((r) => r.display_name)).toEqual(["Alice", "Bob"]);
-    });
-
-    it("does NOT expose id through the public view", async () => {
-      await expect(
-        asAnon((c) => c.query(`select id from public.public_profiles`)),
-      ).rejects.toThrow(/does not exist/i);
-    });
-
-    it("does NOT expose any private column through the public view", async () => {
-      for (const col of ["graduation_year", "career_interests", "role"]) {
-        await expect(
-          asAnon((c) => c.query(`select ${col} from public.public_profiles`)),
-        ).rejects.toThrow(/does not exist/i);
-      }
-    });
-
-    // --- write isolation ---
+    // --- update: own permitted fields only ---
 
     it("lets user A update their own permitted fields", async () => {
       const count = await asUser(USER_A, async (c) => {
@@ -135,7 +117,7 @@ export function runProfilesRlsSuite(enabled: boolean): void {
       expect(count).toBe(1);
     });
 
-    it("does NOT let user A update user B's profile", async () => {
+    it("does NOT let user A update user B", async () => {
       const count = await asUser(USER_A, async (c) => {
         const r = await c.query(
           `update public.profiles set display_name = 'HACKED' where id = $1`,
@@ -146,48 +128,68 @@ export function runProfilesRlsSuite(enabled: boolean): void {
       expect(count).toBe(0);
     });
 
-    // --- anti-escalation / identity integrity ---
+    // --- immutable / privileged columns ---
 
-    it("does NOT let a normal user promote THEMSELVES to admin", async () => {
+    it("does NOT let a user update role (self-promotion to admin)", async () => {
       await expect(
         asUser(USER_A, (c) =>
-          c.query(`update public.profiles set role = 'admin' where id = $1`, [
-            USER_A,
-          ]),
+          c.query(`update public.profiles set role = 'admin' where id = $1`, [USER_A]),
         ),
       ).rejects.toThrow(/permission denied/i);
     });
 
-    it("does NOT let a normal user promote ANOTHER user to admin", async () => {
+    it("does NOT let a user promote ANOTHER user to admin", async () => {
       await expect(
         asUser(USER_A, (c) =>
-          c.query(`update public.profiles set role = 'admin' where id = $1`, [
-            USER_B,
-          ]),
+          c.query(`update public.profiles set role = 'admin' where id = $1`, [USER_B]),
         ),
       ).rejects.toThrow(/permission denied/i);
     });
 
-    it("does NOT let a user change their own id", async () => {
+    it("does NOT let a user update id", async () => {
       await expect(
         asUser(USER_A, (c) =>
           c.query(
-            `update public.profiles
-               set id = '99999999-9999-9999-9999-999999999999'
-             where id = $1`,
+            `update public.profiles set id = '99999999-9999-9999-9999-999999999999' where id = $1`,
             [USER_A],
           ),
         ),
       ).rejects.toThrow(/permission denied/i);
     });
 
-    it("does NOT let a normal user INSERT a profile (e.g. a self-made admin row)", async () => {
+    it("does NOT let a user update created_at", async () => {
+      await expect(
+        asUser(USER_A, (c) =>
+          c.query(`update public.profiles set created_at = now() where id = $1`, [USER_A]),
+        ),
+      ).rejects.toThrow(/permission denied/i);
+    });
+
+    it("does NOT let a user update updated_at", async () => {
+      await expect(
+        asUser(USER_A, (c) =>
+          c.query(`update public.profiles set updated_at = now() where id = $1`, [USER_A]),
+        ),
+      ).rejects.toThrow(/permission denied/i);
+    });
+
+    // --- insert / delete denied ---
+
+    it("does NOT let a user INSERT a profile", async () => {
       await expect(
         asUser(USER_A, (c) =>
           c.query(
             `insert into public.profiles (id, display_name, role)
              values ('33333333-3333-3333-3333-333333333333','Mallory','admin')`,
           ),
+        ),
+      ).rejects.toThrow(/permission denied/i);
+    });
+
+    it("does NOT let a user DELETE a profile", async () => {
+      await expect(
+        asUser(USER_A, (c) =>
+          c.query(`delete from public.profiles where id = $1`, [USER_A]),
         ),
       ).rejects.toThrow(/permission denied/i);
     });

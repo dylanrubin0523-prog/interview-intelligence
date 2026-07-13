@@ -12,7 +12,7 @@
 - created_at
 - updated_at
 
-Public columns (`display_name`, `school`) are exposed only through the restricted view `public.public_profiles` (see ADR-010). All other columns — including `id` (which is `auth.users.id`) — are owner-only.
+Profiles are entirely owner-only in Phase 1: a user can read and update only their own row, and there is no public profile view or directory. Public author identity is deferred to the interview-report public surface, where approved-moderation status and the author's anonymous-display choice are enforced together.
 
 ### companies
 - id
@@ -98,7 +98,7 @@ Public columns (`display_name`, `school`) are exposed only through the restricte
 
 ## Authorization expectations
 
-- Profiles: owner can update permitted fields only (not `role`, `id`, or timestamps); public fields (`display_name`, `school`) readable by anyone via `public.public_profiles`; all other fields, including `id`, owner-only. `role` is never client-writable.
+- Profiles: entirely owner-only. A user can read only their own row (no enumeration of others, no anon read) and update only permitted fields (not `role`, `id`, `created_at`, or `updated_at`). Users cannot insert or delete profiles. `role` is never client-writable. No globally public profile directory.
 - Applications: owner only.
 - Draft/pending interview reports: author and admins only.
 - Approved interview reports: publicly readable.
