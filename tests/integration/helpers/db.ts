@@ -14,9 +14,15 @@ const BOOTSTRAP_SQL = path.join(
 
 /**
  * Connection string for a throwaway PostgreSQL database dedicated to tests.
- * When unset, the integration suite skips itself (see profiles-rls.test.ts) so
- * that environments without a database — including the default CI `quality`
- * job — are unaffected.
+ *
+ * Local development: when this is unset the integration suite skips itself,
+ * so a database is not required to run `npm run test:integration` locally.
+ *
+ * Required CI: the `quality` workflow provisions a PostgreSQL service and sets
+ * this variable, so the integration suite must execute there. If the database
+ * configuration is missing in CI, the suite fails (via the guard in
+ * profiles-rls.test.ts) rather than skipping — a green check always means the
+ * RLS tests actually ran.
  */
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
 

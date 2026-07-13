@@ -106,15 +106,27 @@ export function runProfilesRlsSuite(enabled: boolean): void {
 
     // --- update: own permitted fields only ---
 
-    it("lets user A update their own permitted fields", async () => {
-      const count = await asUser(USER_A, async (c) => {
+    it("lets user A update all four permitted fields in one operation", async () => {
+      const result = await asUser(USER_A, async (c) => {
         const r = await c.query(
-          `update public.profiles set display_name = 'Alice Updated' where id = $1`,
+          `update public.profiles
+             set display_name = 'Alice Updated',
+                 school = 'New School',
+                 graduation_year = 2028,
+                 career_interests = '{consulting,banking}'
+           where id = $1
+           returning display_name, school, graduation_year, career_interests`,
           [USER_A],
         );
-        return r.rowCount;
+        return { count: r.rowCount, row: r.rows[0] };
       });
-      expect(count).toBe(1);
+      expect(result.count).toBe(1);
+      expect(result.row).toEqual({
+        display_name: "Alice Updated",
+        school: "New School",
+        graduation_year: 2028,
+        career_interests: ["consulting", "banking"],
+      });
     });
 
     it("does NOT let user A update user B", async () => {
