@@ -18,20 +18,28 @@ export function runProfilesRlsSuite(enabled: boolean): void {
   describeFn("profiles RLS (issue #8)", () => {
     beforeAll(async () => {
       await resetAndMigrate();
-      // Seed as owner, simulating the future issue #9 trigger. role is NOT
-      // specified for either user, so the column default is exercised.
+      // Insert the two auth.users rows; the issue #9 on_auth_user_created trigger
+      // creates the matching profiles rows automatically (with defaults, incl.
+      // role = 'user'). We do NOT insert profiles manually. An owner-only update
+      // then populates the display fields the RLS assertions below rely on.
       await asOwner(async (c) => {
         await c.query(
           `insert into auth.users (id, email) values ($1,$2),($3,$4)`,
           [USER_A, "a@test.dev", USER_B, "b@test.dev"],
         );
         await c.query(
-          `insert into public.profiles
-             (id, display_name, school, graduation_year, career_interests)
-           values
-             ($1,'Alice','State University',2027,'{finance}'),
-             ($2,'Bob','Tech University',2026,'{consulting}')`,
-          [USER_A, USER_B],
+          `update public.profiles
+             set display_name = 'Alice', school = 'State University',
+                 graduation_year = 2027, career_interests = '{finance}'
+           where id = $1`,
+          [USER_A],
+        );
+        await c.query(
+          `update public.profiles
+             set display_name = 'Bob', school = 'Tech University',
+                 graduation_year = 2026, career_interests = '{consulting}'
+           where id = $1`,
+          [USER_B],
         );
       });
     }, 60_000);

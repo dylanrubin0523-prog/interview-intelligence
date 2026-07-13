@@ -31,9 +31,14 @@ grant usage on schema public to anon, authenticated, service_role;
 create schema if not exists auth;
 grant usage on schema auth to anon, authenticated, service_role;
 
+-- Minimal but faithful: includes the user-/provider-controlled metadata columns
+-- that exist on Supabase's real auth.users, so tests can insert hostile metadata
+-- and prove the handle_new_user trigger never reads or copies it.
 create table auth.users (
   id uuid primary key,
-  email text
+  email text,
+  raw_user_meta_data jsonb,
+  raw_app_meta_data jsonb
 );
 
 -- auth.uid(): the 'sub' claim of the request JWT, exactly as in Supabase.
